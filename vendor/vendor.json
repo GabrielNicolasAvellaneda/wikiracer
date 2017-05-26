@@ -21,12 +21,6 @@
 			"revisionTime": "2017-05-24T00:31:38Z"
 		},
 		{
-			"checksumSHA1": "IUGiFpVYZ6AG0MwUcYJKC9B7H9M=",
-			"path": "github.com/scryner/lfreequeue",
-			"revision": "473f33702129e490c250e0d603ed7659e6a83be6",
-			"revisionTime": "2012-12-12T07:48:22Z"
-		},
-		{
 			"checksumSHA1": "x/C9sWJ33glBGKgGvb8VvUQvR8s=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "5e5dc898656f695e2a086b8e12559febbfc01562",
@@ -51,10 +45,10 @@
 			"revisionTime": "2017-04-21T23:22:19Z"
 		},
 		{
-			"checksumSHA1": "t7WXw4stPPAeWd4RT4j04lHruwI=",
-			"path": "gopkg.in/gyuho/goraph.v2",
-			"revision": "d460590d53a91b1f29347ca9b01d1e8c158cbeb2",
-			"revisionTime": "2016-03-28T02:05:32Z"
+			"checksumSHA1": "7YPmpDeCouwlD2QYzDCE83USHTg=",
+			"path": "gopkg.in/oleiade/lane.v1",
+			"revision": "28f7c3f09254f12b51e620fa4db136ba58804762",
+			"revisionTime": "2016-08-17T06:23:29Z"
 		}
 	],
 	"rootPath": "github.com/darkonie/wikiracer"
