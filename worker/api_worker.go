@@ -38,29 +38,6 @@ type apiWikiCrawler struct {
 
 // Fetch takes a wiki Link and returns wiki Page.
 func (c *apiWikiCrawler) Fetch(ctx context.Context, link string) (*Page, error) {
-	//fmt.Printf("GET http://%s\n", link)
-	//switch string(link) {
-	//case "Mike Tyson":
-	//	return &Page{
-	//		Name: "Mike Tyson",
-	//		Links: map[Link]uint64{"AAA": 1},
-	//	}, nil
-	//case "AAA":
-	//	return &Page{
-	//		Name: "AAA",
-	//		Links: map[Link]uint64{"BBB": 1},
-	//	}, nil
-	//case "BBB":
-	//	return &Page{
-	//		Name: "BBB",
-	//		Links: map[Link]uint64{"Ukraine": 1},
-	//	}, nil
-	//
-	//default:
-	//}
-	//
-	//return nil, fmt.Errorf("%s not found", link)
-
 	page := &Page{
 		Name:  link,
 		Links: make(map[string]bool),

@@ -143,14 +143,14 @@ func (j *Job) Start(ctx context.Context, cancel context.CancelFunc) error {
 			case page := <- j.resultChan:
 				j.updateJobDepth(page)
 				if page.Name == j.EndLink {
-					j.Stop(PageFound)
 					j.updatePath(page)
+					j.Stop(PageFound)
 					return
 				}
 
 				if _, ok := page.Links[j.EndLink]; ok {
-					j.Stop(PageFound)
 					j.updatePath(&worker.Page{Name:j.EndLink, Prev: page})
+					j.Stop(PageFound)
 					return
 				}
 
