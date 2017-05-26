@@ -1,8 +1,8 @@
 # wikiracer
 Find path between 2 wikipedia pages
 
-## How does it work
-I use priority queue to submit the tasks to workers. The priority is the depth of links value. Each worker reads from a queue processes the task and submits results back to the queue with appropriate priority.
+## How it works
+I use priority queue to submit the tasks to workers. The priority is the depth of links value. Each worker reads from a queue, processes the task and submits results back to the queue with appropriate priority.
 `Mike Tyson(1)` -> `Hello World(2)`
 `Mike Tyson(1)` -> `Foo(2)`
 `Foo(2)` -> `Bar(3)`
