@@ -96,6 +96,7 @@ curl http://127.0.0.1:8081/api/v1/job/ac6620d2-4260-11e7-88c3-0242ac110002 | jq 
 ```
 
  - `path` the result of the job. This is the path we are looking for.
+ - `duration` time elapsed since start if job is running. When job is stopped (page found or cancelled) the timer will stop.
  - `is_running` indicates if the job is currently running.
  - `start_link`, `end_link`, `comment`, `timeout`, `workers` same as in request.
  - `status`
@@ -106,3 +107,7 @@ curl http://127.0.0.1:8081/api/v1/job/ac6620d2-4260-11e7-88c3-0242ac110002 | jq 
   - `pages_visited` number of pages visited.
   - `depth` the depth of crawled links.
 
+### cancel a running job
+```
+curl -XPOST http://127.0.0.1:8081/api/v1/job/f5bdd783-426a-11e7-b297-0242ac110002/cancel
+```
