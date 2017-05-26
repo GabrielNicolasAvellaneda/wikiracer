@@ -24,6 +24,15 @@ http://127.0.0.1:8081/api/v1/job
 use curl to submit the job and browser to get the results.
 ```
 
+## How to build
+ - `make build` builds binary locally.
+ - `make build-image` builds an docker image with installed binary.
+
+## How to test
+```
+make test
+```
+
 ## API
 ### GET
 ```
