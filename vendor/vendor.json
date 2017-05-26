@@ -1,0 +1,61 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "WMTjT/WhwABW0CP22n1KeXxb96w=",
+			"path": "github.com/google/uuid",
+			"revision": "6a5e28554805e78ea6141142aba763936c4761c0",
+			"revisionTime": "2017-03-06T14:51:42Z"
+		},
+		{
+			"checksumSHA1": "g/V4qrXjUGG9B+e3hB+4NAYJ5Gs=",
+			"path": "github.com/gorilla/context",
+			"revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
+			"revisionTime": "2016-08-17T18:46:32Z"
+		},
+		{
+			"checksumSHA1": "m+Xb6aeLpAjIjq9Utnicv+e96TQ=",
+			"path": "github.com/gorilla/mux",
+			"revision": "043ee6597c29786140136a5747b6a886364f5282",
+			"revisionTime": "2017-05-24T00:31:38Z"
+		},
+		{
+			"checksumSHA1": "IUGiFpVYZ6AG0MwUcYJKC9B7H9M=",
+			"path": "github.com/scryner/lfreequeue",
+			"revision": "473f33702129e490c250e0d603ed7659e6a83be6",
+			"revisionTime": "2012-12-12T07:48:22Z"
+		},
+		{
+			"checksumSHA1": "x/C9sWJ33glBGKgGvb8VvUQvR8s=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": "5e5dc898656f695e2a086b8e12559febbfc01562",
+			"revisionTime": "2017-05-15T10:45:16Z"
+		},
+		{
+			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
+			"path": "golang.org/x/net/html",
+			"revision": "7dcfb8076726a3fdd9353b6b8a1f1b6be6811bd6",
+			"revisionTime": "2017-05-25T01:14:41Z"
+		},
+		{
+			"checksumSHA1": "z79z5msRzgU48FCZxSuxfU8b4rs=",
+			"path": "golang.org/x/net/html/atom",
+			"revision": "7dcfb8076726a3fdd9353b6b8a1f1b6be6811bd6",
+			"revisionTime": "2017-05-25T01:14:41Z"
+		},
+		{
+			"checksumSHA1": "4owIzLmRdrdy3H3j/OD8UMJD5ZE=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "a2e06a18b0d52d8cb2010e04b372a1965d8e3439",
+			"revisionTime": "2017-04-21T23:22:19Z"
+		},
+		{
+			"checksumSHA1": "t7WXw4stPPAeWd4RT4j04lHruwI=",
+			"path": "gopkg.in/gyuho/goraph.v2",
+			"revision": "d460590d53a91b1f29347ca9b01d1e8c158cbeb2",
+			"revisionTime": "2016-03-28T02:05:32Z"
+		}
+	],
+	"rootPath": "github.com/darkonie/wikiracer"
+}
