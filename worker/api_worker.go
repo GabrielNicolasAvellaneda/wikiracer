@@ -7,10 +7,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/sirupsen/logrus"
-	"strings"
 )
+
+// WikiCrawler defines a wiki crawler interface
+type WikiCrawler interface {
+	Fetch(context.Context, string) (*Page, error)
+}
 
 // NewAPIWikiCrawler is a apiWikiCrawler constructor.
 func NewAPIWikiCrawler(client *http.Client) WikiCrawler {
@@ -32,33 +37,23 @@ type apiWikiCrawler struct {
 }
 
 // Fetch takes a wiki Link and returns wiki Page.
-func (c *apiWikiCrawler) Fetch(ctx context.Context, link Link) (*Page, error) {
+func (c *apiWikiCrawler) Fetch(ctx context.Context, link string) (*Page, error) {
 	//fmt.Printf("GET http://%s\n", link)
 	//switch string(link) {
 	//case "Mike Tyson":
 	//	return &Page{
 	//		Name: "Mike Tyson",
-	//		Links: map[Link]uint64{"level2-1": 1, "level2-2":1},
+	//		Links: map[Link]uint64{"AAA": 1},
 	//	}, nil
-	//case "level2-1":
+	//case "AAA":
 	//	return &Page{
-	//		Name: "level2-1",
-	//		Links: map[Link]uint64{"level3-1": 1, "level3-2":1},
+	//		Name: "AAA",
+	//		Links: map[Link]uint64{"BBB": 1},
 	//	}, nil
-	//case "level2-2":
+	//case "BBB":
 	//	return &Page{
-	//		Name: "level2-2",
-	//		Links: map[Link]uint64{"level3-3": 1, "level3-4":1},
-	//	}, nil
-	//case "level3-4":
-	//	return &Page{
-	//		Name: "level3-4",
-	//		Links: map[Link]uint64{"level4-1":1},
-	//	}, nil
-	//case "level4-1":
-	//	return &Page{
-	//		Name: "level4-1",
-	//		Links: map[Link]uint64{"Ukraine":1},
+	//		Name: "BBB",
+	//		Links: map[Link]uint64{"Ukraine": 1},
 	//	}, nil
 	//
 	//default:
@@ -68,7 +63,7 @@ func (c *apiWikiCrawler) Fetch(ctx context.Context, link Link) (*Page, error) {
 
 	page := &Page{
 		Name:  link,
-		Links: make(map[Link]uint64),
+		Links: make(map[string]bool),
 	}
 	// response describes the response from the server.
 	type response struct {
@@ -134,12 +129,9 @@ func (c *apiWikiCrawler) Fetch(ctx context.Context, link Link) (*Page, error) {
 				if strings.Contains(l.Title, ":") {
 					continue
 				}
-				link := Link(l.Title)
 
-				if _, ok := page.Links[link]; !ok {
-					page.Links[link] = 1
-				} else {
-					page.Links[link]++
+				if _, ok := page.Links[l.Title]; !ok {
+					page.Links[l.Title] = true
 				}
 			}
 		}

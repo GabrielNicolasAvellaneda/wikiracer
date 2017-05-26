@@ -33,7 +33,7 @@ func NewRouter(jpManager *control.JobPoolManager) *mux.Router {
 	route.Path("/job/{id}").Handler(jobMiddleware(jobInfoHandler, jpManager)).Methods("GET")
 
 	// use server sent events to track the job status in real time.
-	route.Path("/job/{id}/sse").Handler(jobMiddleware(jobInfoSSEHandler, jpManager)).Methods("GET")
+	// route.Path("/job/{id}/sse").Handler(jobMiddleware(jobInfoSSEHandler, jpManager)).Methods("GET")
 
 	// kick off a new job.
 	route.Path("/job").Handler(jobMiddleware(jobStartHandler, jpManager)).Methods("POST")

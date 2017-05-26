@@ -44,6 +44,7 @@ func jobInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: implement this
 func jobInfoSSEHandler(w http.ResponseWriter, r *http.Request) {
 	jpManager, ok := jpManagerFromContext(r.Context())
 	if !ok {

@@ -11,11 +11,6 @@ import (
 	"golang.org/x/net/html"
 )
 
-// WikiCrawler defines a wiki crawler interface
-type WikiCrawler interface {
-	Fetch(context.Context, Link) (*Page, error)
-}
-
 // NewHTMLWikiCrawler returns a new wiki crawler that parses html.
 func NewHTMLWikiCrawler(client *http.Client) WikiCrawler {
 	return &htmlWikiCrawler{
@@ -35,19 +30,19 @@ type htmlWikiCrawler struct {
 	endpoint url.URL
 }
 
-func (c *htmlWikiCrawler) trim(u string) Link {
+func (c *htmlWikiCrawler) trim(u string) string {
 	trimmed := strings.TrimLeft(u, "/wiki/")
 	if index := strings.Index(u, "#"); index > -1 {
 		trimmed = u[index:]
 	}
-	return Link(trimmed)
+	return trimmed
 }
 
 // Fetch gets a link and returns a *Page which represents a page with found links.
-func (c *htmlWikiCrawler) Fetch(ctx context.Context, link Link) (*Page, error) {
+func (c *htmlWikiCrawler) Fetch(ctx context.Context, link string) (*Page, error) {
 	page := &Page{
 		Name:  link,
-		Links: make(map[Link]uint64),
+		Links: make(map[string]bool),
 	}
 
 	pageURL := c.endpoint.String() + string(link)
@@ -59,7 +54,7 @@ func (c *htmlWikiCrawler) Fetch(ctx context.Context, link Link) (*Page, error) {
 	logrus.Debugf("GET %s", req.URL.String())
 	resp, err := c.client.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("unable to do a request: %s", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -93,12 +88,9 @@ func (c *htmlWikiCrawler) Fetch(ctx context.Context, link Link) (*Page, error) {
 
 					l := c.trim(a.Val)
 					if _, ok := page.Links[l]; !ok {
-						page.Links[l] = 1
-					} else {
-						page.Links[l]++
+						page.Links[l] = true
 					}
 				}
-
 			}
 		}
 	}

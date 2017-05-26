@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/darkonie/wikiracer/primitives"
@@ -18,11 +17,10 @@ const (
 	// PageFound status is used when the destination page found.
 	PageFound = iota
 
+	// Running status is used when the job is started.
+	Running
 	// Cancelled status is used to indicate that the user cancelled the job.
 	Cancelled
-
-	// Timedout status is used when job reached timeout.
-	Timedout
 
 	// Unchanged initial job state.
 	Unchanged
@@ -31,17 +29,23 @@ const (
 // NewJob returns a new job structure.
 func NewJob(startLink, endLink, comment, id, crawlerType string, timeout time.Duration, workers int, client *http.Client) *Job {
 
+	// default to 100 workers
+	jobWorkers := 100
+	if workers > 0 && workers <= 1000 {
+		jobWorkers = workers
+	}
+
 	dequeueChan := make(chan interface{})
 	j := &Job{
 		Status:    Unchanged,
 		Comment:   comment,
-		StartLink: worker.Link(startLink),
-		EndLink:   worker.Link(endLink),
+		StartLink: startLink,
+		EndLink:   endLink,
 		Timeout:   timeout.String(),
-		Workers:   workers,
+		Workers:   jobWorkers,
 
-		g:           primitives.NewGraph(),
 		dequeueChan: dequeueChan,
+		resultChan:  make(chan *worker.Page),
 		client:      client,
 		cancel:      func() {},
 		id:          id,
@@ -72,10 +76,10 @@ func NewJob(startLink, endLink, comment, id, crawlerType string, timeout time.Du
 type Job struct {
 	sync.Mutex
 
-	g primitives.Graph
 	q primitives.Q
 
 	dequeueChan chan interface{}
+	resultChan chan *worker.Page
 	client      *http.Client
 
 	newWorker func() worker.WikiCrawler
@@ -83,10 +87,10 @@ type Job struct {
 	cancel context.CancelFunc
 	id     string
 
-	Path      []string    `json:"path,omitempty"`
+	Path      []string    `json:"path"`
 	IsRunning bool        `json:"is_running"`
-	StartLink worker.Link `json:"start_link"`
-	EndLink   worker.Link `json:"end_link"`
+	StartLink string      `json:"start_link"`
+	EndLink   string      `json:"end_link"`
 	Status    int         `json:"status"`
 	Comment   string      `json:"comment"`
 	StartTime time.Time   `json:"start_time"`
@@ -97,8 +101,23 @@ type Job struct {
 
 	// stats
 	Duration       *JobDuration `json:"duration"`
-	PagesProcessed uint64       `json:"pages_processed"`
 	PagesVisited   uint64       `json:"pages_visited"`
+	Depth          int          `json:"depth"`
+}
+
+func (j *Job) updateJobDepth(page *worker.Page) {
+	j.Lock()
+	defer j.Unlock()
+	if page.Depth > j.Depth {
+		j.Depth = page.Depth
+	}
+}
+
+func (j *Job) addError(err error) {
+	j.Lock()
+	defer j.Unlock()
+
+	j.Errors = append(j.Errors, err.Error())
 }
 
 // Start a new job
@@ -110,42 +129,61 @@ func (j *Job) Start(ctx context.Context, cancel context.CancelFunc) error {
 	}
 
 	j.cancel = cancel
-
-	// start an iter queue with context
-	j.q = primitives.NewWatchIterQueue(ctx, j.dequeueChan)
+	j.q = primitives.NewPQueue(ctx, j.dequeueChan)
 	j.IsRunning = true
+	j.Status = Running
 	j.StartTime = time.Now()
 
-	j.q.Enqueue(&worker.Page{Name: j.StartLink})
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+
+			case page := <- j.resultChan:
+				j.updateJobDepth(page)
+				if page.Name == j.EndLink {
+					j.Stop(PageFound)
+					j.updatePath(page)
+					return
+				}
+
+				if _, ok := page.Links[j.EndLink]; ok {
+					j.Stop(PageFound)
+					j.updatePath(&worker.Page{Name:j.EndLink, Prev: page})
+					return
+				}
+
+				depth := page.Depth + 1
+				for link := range page.Links {
+					newPage := &worker.Page{Name:link, Prev: page, Depth: depth}
+					j.q.Enqueue(newPage, depth)
+				}
+			}
+		}
+	}()
+
+	// submit start page.
+	j.q.Enqueue(&worker.Page{Name: j.StartLink}, 1)
 	go j.start(ctx)
 	return nil
 }
 
-// process page takes a page adds NEW nodes to graph, excludes already added nodes and returns a new sanitized page.
-func (j *Job) processPage(page *worker.Page) {
-	j.Lock()
-	defer j.Unlock()
-
-	name := string(page.Name)
-	j.g.GAddNode(name)
-
-	for link := range page.Links {
-		linkStr := string(link)
-
-		j.g.GAddNode(linkStr)
-		err := j.g.GAddEdge(name, linkStr, 1)
-		if err != nil {
-			logrus.Errorf("unable to add edge between %s and %s. %s", name, linkStr, err)
-			continue
-		}
+func (j *Job)updatePath(page *worker.Page) {
+	var path []string
+	for p := page; p != nil; p = p.Prev {
+		path = append(path, string(p.Name))
 	}
-}
 
-func (j *Job) addError(err error) {
-	j.Lock()
-	defer j.Unlock()
+	// reverse slice of strings in go :)
+	reversePath := func(path []string) []string {
+		for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+			path[i], path[j] = path[j], path[i]
+		}
+		return path
+	}
 
-	j.Errors = append(j.Errors, err.Error())
+	j.Path = reversePath(path)
 }
 
 func (j *Job) start(ctx context.Context) {
@@ -153,60 +191,45 @@ func (j *Job) start(ctx context.Context) {
 		m: make(map[string]bool),
 	}
 
-	done := make(chan struct{})
-
-
-	// default to 100 workers
-	workers := 100
-	if j.Workers > 1 && j.Workers < 1000 {
-		workers = j.Workers
-	}
-
-	for i := 0; i < workers; i++ {
+	for i := 0; i < j.Workers; i++ {
 		go func() {
 			w := j.newWorker()
 			for {
 				select {
 				case <-ctx.Done():
-					j.Stop(Timedout)
-					return
-
-				case <- done:
 					return
 
 				case item := <-j.dequeueChan:
 					j.PagesVisited = visit.len()
-
-					page, ok := item.(*worker.Page)
+					pair, ok := item.(*primitives.Pair)
 					if !ok {
-						logrus.Errorf("received item is not page. Got %+v", item)
+						logrus.Errorf("received item is not a Pair. Got %+v", item)
 						break
 					}
 
-					j.processPage(page)
-					if page.Has(j.EndLink) {
-						j.Stop(PageFound)
-						return
+					req, ok := pair.Item.(*worker.Page)
+					if !ok {
+						logrus.Errorf("received item is not a string. Got %+v", item)
+						break
 					}
 
-					for _, l := range j.g.GBFS(string(page.Name)) {
-						if l == "" {
-							continue
-						}
-						if visit.visited(l) {
-							continue
-						}
+					if visit.visited(string(req.Name)) {
+						continue
+					}
 
-						fetchedPage, err := w.Fetch(ctx, worker.Link(l))
-						if err != nil {
-							if err != context.Canceled {
-								logrus.Error(err)
-								j.addError(err)
-							}
-							continue
-						}
-						atomic.AddUint64(&j.PagesProcessed, 1)
-						j.q.Enqueue(fetchedPage)
+					page, err := w.Fetch(ctx, req.Name)
+					if err != nil {
+						logrus.Error(err)
+						continue
+					}
+
+					req.Depth = pair.Priority
+					req.Links = page.Links
+
+					// make sure we don't block if
+					select {
+					case j.resultChan <- req:
+					case <-time.After(time.Second):
 					}
 				}
 			}
@@ -225,12 +248,5 @@ func (j *Job) Stop(reason int) error {
 	j.IsRunning = false
 	j.EndTime = time.Now()
 	j.Status = reason
-	if reason == PageFound {
-		var err error
-		j.Path, err = j.g.GFindPath(string(j.StartLink), string(j.EndLink))
-		return err
-	}
-	logrus.Infof("stopping job %s with status %d", j.id, reason)
-
 	return nil
 }
